@@ -6,21 +6,21 @@ import lombok.Getter;
 import java.nio.charset.StandardCharsets;
 
 /**
- * RESP简单字符串
+ * RESP简单错误
  */
 @Getter
-public class RESPSimpleStrings extends RESPProtocol {
+public class RESPSimpleErrors extends RESPProtocol {
 
     private final String content;
 
-    public RESPSimpleStrings(String content) {
+    public RESPSimpleErrors(String content) {
         this.content = content;
     }
 
     @Override
     public void encode(RESPProtocol respProtocol, ByteBuf byteBuf) {
-        byteBuf.writeByte('+');
-        byteBuf.writeBytes(((RESPSimpleStrings) respProtocol).getContent().getBytes(StandardCharsets.UTF_8));
+        byteBuf.writeByte('-');
+        byteBuf.writeBytes(((RESPSimpleErrors) respProtocol).getContent().getBytes(StandardCharsets.UTF_8));
         byteBuf.writeBytes(CRLF);
     }
 

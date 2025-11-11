@@ -17,7 +17,7 @@ public abstract class RESPProtocol {
      * RESP协议解码
      * 支持的类型:
      * - RESPSimpleStrings "+OK\r\n"
-     * - RESPErrors "-Error message\r\n"
+     * - RESPSimpleErrors "-Error message\r\n"
      * - RESPIntegers ":0\r\n"
      * - RESPBulkStrings "$6\r\nfoobar\r\n"
      * - RESPArrays "*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n"
@@ -34,7 +34,7 @@ public abstract class RESPProtocol {
             case '+':
                 return new RESPSimpleStrings(getString(byteBuf));
             case '-':
-                return new RESPErrors(getString(byteBuf));
+                return new RESPSimpleErrors(getString(byteBuf));
             case ':':
                 return new RESPIntegers(getNumber(byteBuf));
             case '$':
