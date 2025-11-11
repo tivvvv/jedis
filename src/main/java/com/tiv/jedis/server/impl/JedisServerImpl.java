@@ -12,10 +12,12 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Jedis服务端实现类
  */
+@Slf4j
 public class JedisServerImpl implements JedisServer {
 
     private String host;
@@ -51,9 +53,9 @@ public class JedisServerImpl implements JedisServer {
                 });
         try {
             this.serverChannel = serverBootstrap.bind(host, port).sync().channel();
-            System.out.printf("Jedis 启动 %s:%s%n", host, port);
+            log.info(String.format("Jedis服务器启动成功 %s:%s", host, port));
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.error("Jedis服务器启动异常", e);
             end();
             Thread.currentThread().interrupt();
         }
@@ -61,14 +63,19 @@ public class JedisServerImpl implements JedisServer {
 
     @Override
     public void end() {
-        if (this.leaderGroup != null) {
-            this.leaderGroup.shutdownGracefully();
-        }
-        if (this.workerGroup != null) {
-            this.workerGroup.shutdownGracefully();
-        }
-        if (this.serverChannel != null) {
-            this.serverChannel.close();
+        try {
+            if (this.serverChannel != null) {
+                this.serverChannel.close().sync();
+            }
+            if (this.workerGroup != null) {
+                this.workerGroup.shutdownGracefully().sync();
+            }
+            if (this.leaderGroup != null) {
+                this.leaderGroup.shutdownGracefully().sync();
+            }
+        } catch (InterruptedException e) {
+            log.error("Jedis服务器关闭异常", e);
+            Thread.currentThread().interrupt();
         }
     }
 
