@@ -11,7 +11,7 @@ public class RESPIntegers extends RESPProtocol {
     }
 
     @Override
-    public void encode(ByteBuf byteBuf) {
+    public void encode(RESPProtocol respProtocol, ByteBuf byteBuf) {
 
     }
 

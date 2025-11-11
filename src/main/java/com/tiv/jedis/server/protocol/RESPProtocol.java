@@ -2,6 +2,10 @@ package com.tiv.jedis.server.protocol;
 
 import io.netty.buffer.ByteBuf;
 
+/**
+ * RESP协议
+ * <a href="https://redis.io/docs/latest/develop/reference/protocol-spec/">Redis serialization protocol</a>
+ */
 public abstract class RESPProtocol {
 
     /**
@@ -42,7 +46,7 @@ public abstract class RESPProtocol {
         }
     }
 
-    public abstract void encode(ByteBuf byteBuf);
+    public abstract void encode(RESPProtocol respProtocol, ByteBuf byteBuf);
 
     private static String getString(ByteBuf byteBuf) {
         char c;

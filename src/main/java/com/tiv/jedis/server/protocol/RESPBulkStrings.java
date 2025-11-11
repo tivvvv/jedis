@@ -5,7 +5,7 @@ import io.netty.buffer.ByteBuf;
 public class RESPBulkStrings extends RESPProtocol {
 
     @Override
-    public void encode(ByteBuf byteBuf) {
+    public void encode(RESPProtocol respProtocol, ByteBuf byteBuf) {
 
     }
 
