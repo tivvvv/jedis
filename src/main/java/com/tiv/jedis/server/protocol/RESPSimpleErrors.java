@@ -19,6 +19,7 @@ public class RESPSimpleErrors extends RESPProtocol {
 
     @Override
     public void encode(RESPProtocol respProtocol, ByteBuf byteBuf) {
+        // "-Error message\r\n"
         byteBuf.writeByte('-');
         byteBuf.writeBytes(((RESPSimpleErrors) respProtocol).getContent().getBytes(StandardCharsets.UTF_8));
         byteBuf.writeBytes(CRLF);

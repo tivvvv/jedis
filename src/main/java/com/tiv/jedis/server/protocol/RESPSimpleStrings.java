@@ -19,6 +19,7 @@ public class RESPSimpleStrings extends RESPProtocol {
 
     @Override
     public void encode(RESPProtocol respProtocol, ByteBuf byteBuf) {
+        // "+OK\r\n"
         byteBuf.writeByte('+');
         byteBuf.writeBytes(((RESPSimpleStrings) respProtocol).getContent().getBytes(StandardCharsets.UTF_8));
         byteBuf.writeBytes(CRLF);
