@@ -32,20 +32,49 @@ public abstract class RESPProtocol {
         char c = (char) byteBuf.readByte();
         switch (c) {
             case '+':
+                // RESPSimpleStrings "+OK\r\n"
                 return new RESPSimpleStrings(getString(byteBuf));
             case '-':
+                // RESPSimpleErrors "-Error message\r\n"
                 return new RESPSimpleErrors(getString(byteBuf));
             case ':':
+                // RESPIntegers ":0\r\n"
                 return new RESPIntegers(getNumber(byteBuf));
             case '$':
-                return null;
+                // RESPBulkStrings "$6\r\nfoobar\r\n"
+                int length = getNumber(byteBuf);
+                if (length == -1) {
+                    return null;
+                }
+                if (byteBuf.readableBytes() < length + 2) {
+                    throw new RuntimeException("格式错误,缺少换行符");
+                }
+
+                byte[] content = new byte[length];
+                byteBuf.readBytes(content);
+                if (byteBuf.readByte() != '\r' || byteBuf.readByte() != '\n') {
+                    throw new RuntimeException("格式错误,缺少换行符");
+                }
+                return new RESPBulkStrings(content);
             case '*':
-                return null;
+                // RESPArrays "*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n"
+                int number = getNumber(byteBuf);
+                RESPProtocol[] array = new RESPProtocol[number];
+                for (int i = 0; i < number; i++) {
+                    array[i] = decode(byteBuf);
+                }
+                return new RESPArrays(array);
             default:
                 throw new RuntimeException("RESP协议不支持");
         }
     }
 
+    /**
+     * RESP协议编码
+     *
+     * @param respProtocol
+     * @param byteBuf
+     */
     public abstract void encode(RESPProtocol respProtocol, ByteBuf byteBuf);
 
     private static String getString(ByteBuf byteBuf) {
