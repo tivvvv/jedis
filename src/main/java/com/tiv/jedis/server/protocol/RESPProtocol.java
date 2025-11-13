@@ -47,13 +47,13 @@ public abstract class RESPProtocol {
                     return null;
                 }
                 if (byteBuf.readableBytes() < length + 2) {
-                    throw new RuntimeException("格式错误,缺少换行符");
+                    throw new RuntimeException("RESPBulkStrings 格式错误");
                 }
 
                 byte[] content = new byte[length];
                 byteBuf.readBytes(content);
                 if (byteBuf.readByte() != '\r' || byteBuf.readByte() != '\n') {
-                    throw new RuntimeException("格式错误,缺少换行符");
+                    throw new RuntimeException("RESPBulkStrings 缺少换行符");
                 }
                 return new RESPBulkStrings(content);
             case '*':
@@ -85,7 +85,7 @@ public abstract class RESPProtocol {
             sb.append(c);
         }
         if (byteBuf.readableBytes() <= 0 || byteBuf.readByte() != '\n') {
-            throw new RuntimeException("格式错误,缺少换行符");
+            throw new RuntimeException("getString--格式错误,缺少换行符");
         }
         return sb.toString();
     }
@@ -102,7 +102,7 @@ public abstract class RESPProtocol {
             val = val * 10 + (c - '0');
         }
         if (byteBuf.readableBytes() <= 0 || byteBuf.readByte() != '\n') {
-            throw new RuntimeException("格式错误,缺少换行符");
+            throw new RuntimeException("getNumber--格式错误,缺少换行符");
         }
         return positive ? val : -val;
     }

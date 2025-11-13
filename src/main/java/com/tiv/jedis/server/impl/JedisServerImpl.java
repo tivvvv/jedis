@@ -1,7 +1,11 @@
 package com.tiv.jedis.server.impl;
 
 import com.tiv.jedis.server.JedisServer;
-import com.tiv.jedis.server.handler.StringHandler;
+import com.tiv.jedis.server.core.JedisCore;
+import com.tiv.jedis.server.core.impl.JedisCoreImpl;
+import com.tiv.jedis.server.handler.RESPCommandHandler;
+import com.tiv.jedis.server.handler.RESPDecoder;
+import com.tiv.jedis.server.handler.RESPEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -10,8 +14,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -30,11 +32,14 @@ public class JedisServerImpl implements JedisServer {
 
     private Channel serverChannel;
 
+    private JedisCore jedisCore;
+
     public JedisServerImpl(String host, int port) {
         this.host = host;
         this.port = port;
         this.leaderGroup = new NioEventLoopGroup(1);
         this.workerGroup = new NioEventLoopGroup(4);
+        this.jedisCore = new JedisCoreImpl();
     }
 
     @Override
@@ -46,9 +51,9 @@ public class JedisServerImpl implements JedisServer {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         ChannelPipeline channelPipeline = socketChannel.pipeline();
-                        channelPipeline.addLast(new StringDecoder());
-                        channelPipeline.addLast(new StringHandler());
-                        channelPipeline.addLast(new StringEncoder());
+                        channelPipeline.addLast(new RESPDecoder());
+                        channelPipeline.addLast(new RESPCommandHandler(jedisCore));
+                        channelPipeline.addLast(new RESPEncoder());
                     }
                 });
         try {
