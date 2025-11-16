@@ -7,7 +7,7 @@ import com.tiv.jedis.server.protocol.RESPSimpleStrings;
 
 /**
  * PING命令
- * printf '*1\r\n$4\r\nPING\r\n' | nc localhost 6379
+ * printf '*1\r\n$4\r\nPING\r\n' | nc localhost 16378
  */
 public class Ping implements Command {
 
