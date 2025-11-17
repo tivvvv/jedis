@@ -1,5 +1,10 @@
 package com.tiv.jedis.server.core.structure;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * 底层结构-dict
  *
@@ -30,9 +35,221 @@ public class Dict<K, V> {
     private static final int MAX_REHASH_PROCESSED_NUM = 5;
 
     public Dict() {
+        clear();
+    }
+
+    /**
+     * 获取key对应的value
+     *
+     * @param key
+     * @return
+     */
+    public V get(K key) {
+        DictEntry<K, V> entry = find(key);
+        return entry == null ? null : entry.value;
+    }
+
+    /**
+     * 获取key对应的节点
+     *
+     * @param key
+     * @return
+     */
+    private DictEntry<K, V> find(K key) {
+        if (key == null) {
+            return null;
+        }
+
+        if (rehashIndex != -1) {
+            rehashStep();
+        }
+
+        int index = calIndex(key, h0.size);
+        DictEntry<K, V> entry = h0.table[index];
+        while (entry != null) {
+            if (entry.key.equals(key)) {
+                return entry;
+            }
+            entry = entry.next;
+        }
+
+        if (rehashIndex != -1 && h1 != null) {
+            index = calIndex(key, h1.size);
+            entry = h1.table[index];
+            while (entry != null) {
+                if (entry.key.equals(key)) {
+                    return entry;
+                }
+                entry = entry.next;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 添加key-value
+     *
+     * @param key
+     * @param value
+     * @return
+     */
+    public V put(K key, V value) {
+        if (key == null) {
+            throw new IllegalArgumentException("key cannot be null");
+        }
+
+        if (rehashIndex == -1 && (double) h0.used / h0.size >= LOAD_FACTOR) {
+            // 达到负载因子,开始rehash
+            startRehash();
+        }
+
+        DictEntry<K, V> entry = find(key);
+        if (entry != null) {
+            V oldValue = entry.value;
+            entry.value = value;
+            return oldValue;
+        }
+
+        if (rehashIndex != -1) {
+            int index = calIndex(key, h1.size);
+            DictEntry<K, V> newEntry = new DictEntry<>(key, value, h1.table[index]);
+            h1.table[index] = newEntry;
+            h1.used++;
+        } else {
+            int index = calIndex(key, h0.size);
+            DictEntry<K, V> newEntry = new DictEntry<>(key, value, h0.table[index]);
+            h0.table[index] = newEntry;
+            h0.used++;
+        }
+        return null;
+    }
+
+    /**
+     * 删除key
+     *
+     * @param key
+     * @return
+     */
+    public V remove(K key) {
+        if (key == null) {
+            throw new IllegalArgumentException("key cannot be null");
+        }
+        if (rehashIndex != -1) {
+            rehashStep();
+        }
+        int index = calIndex(key, h0.size);
+        DictEntry<K, V> entry = h0.table[index];
+        DictEntry<K, V> prev = null;
+
+        while (entry != null) {
+            if (key.equals(entry.key)) {
+                if (prev == null) {
+                    h0.table[index] = entry.next;
+                } else {
+                    prev.next = entry.next;
+                }
+                h0.used--;
+                return entry.value;
+            }
+            prev = entry;
+            entry = entry.next;
+        }
+
+        if (rehashIndex != -1 && h1 != null) {
+            index = calIndex(key, h1.size);
+            entry = h1.table[index];
+            prev = null;
+            while (entry != null) {
+                if (key.equals(entry.key)) {
+                    if (prev == null) {
+                        h1.table[index] = entry.next;
+                    } else {
+                        prev.next = entry.next;
+                    }
+                    h1.used--;
+                    return entry.value;
+                }
+                prev = entry;
+                entry = entry.next;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取所有key
+     *
+     * @return
+     */
+    public Set<K> keySet() {
+        Set<K> keys = new HashSet<>();
+        if (rehashIndex != -1) {
+            rehashStep();
+        }
+        for (int i = 0; i < h0.size; i++) {
+            DictEntry<K, V> entry = h0.table[i];
+            while (entry != null) {
+                keys.add(entry.key);
+                entry = entry.next;
+            }
+        }
+        if (rehashIndex != -1 && h1 != null) {
+            for (int i = 0; i < h1.size; i++) {
+                DictEntry<K, V> entry = h1.table[i];
+                while (entry != null) {
+                    keys.add(entry.key);
+                    entry = entry.next;
+                }
+            }
+        }
+        return keys;
+    }
+
+    /**
+     * 获取所有key-value
+     *
+     * @return
+     */
+    public Map<K, V> keyValueMap() {
+        Map<K, V> map = new HashMap<>();
+        if (rehashIndex != -1) {
+            rehashStep();
+        }
+        for (int i = 0; i < h0.size; i++) {
+            DictEntry<K, V> entry = h0.table[i];
+            while (entry != null) {
+                map.put(entry.key, entry.value);
+                entry = entry.next;
+            }
+        }
+        if (rehashIndex != -1 && h1 != null) {
+            for (int i = 0; i < h1.size; i++) {
+                DictEntry<K, V> entry = h1.table[i];
+                while (entry != null) {
+                    map.put(entry.key, entry.value);
+                    entry = entry.next;
+                }
+            }
+        }
+        return map;
+    }
+
+    /**
+     * 清空dict
+     */
+    public void clear() {
         h0 = new DictHashTable<>(INITIAL_SIZE);
         h1 = null;
         rehashIndex = -1;
+    }
+
+    /**
+     * 获取dict大小
+     *
+     * @return
+     */
+    public int size() {
+        return h0.used + (h1 == null ? 0 : h1.used);
     }
 
     /**
@@ -110,7 +327,7 @@ public class Dict<K, V> {
     }
 
     /**
-     * 字典哈希表
+     * dict哈希表
      *
      * @param <K>
      * @param <V>
@@ -133,7 +350,7 @@ public class Dict<K, V> {
     }
 
     /**
-     * 字典节点
+     * dict节点
      *
      * @param <K>
      * @param <V>
