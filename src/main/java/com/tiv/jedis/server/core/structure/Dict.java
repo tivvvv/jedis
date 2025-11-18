@@ -235,6 +235,22 @@ public class Dict<K, V> {
     }
 
     /**
+     * 是否包含key
+     *
+     * @param key
+     * @return
+     */
+    public boolean containsKey(K key) {
+        if (key == null) {
+            throw new IllegalArgumentException("key cannot be null");
+        }
+        if (rehashIndex != -1) {
+            rehashStep();
+        }
+        return find(key) != null;
+    }
+
+    /**
      * 清空dict
      */
     public void clear() {

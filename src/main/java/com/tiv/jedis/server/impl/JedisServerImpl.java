@@ -22,6 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JedisServerImpl implements JedisServer {
 
+    private static final int DEFAULT_DB_NUM = 16;
+
     private String host;
 
     private int port;
@@ -39,7 +41,7 @@ public class JedisServerImpl implements JedisServer {
         this.port = port;
         this.leaderGroup = new NioEventLoopGroup(1);
         this.workerGroup = new NioEventLoopGroup(4);
-        this.jedisCore = new JedisCoreImpl();
+        this.jedisCore = new JedisCoreImpl(DEFAULT_DB_NUM);
     }
 
     @Override
