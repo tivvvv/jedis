@@ -28,7 +28,7 @@ public class JedisServerImpl implements JedisServer {
 
     private int port;
 
-    private EventLoopGroup leaderGroup;
+    private EventLoopGroup bossGroup;
 
     private EventLoopGroup workerGroup;
 
@@ -39,7 +39,7 @@ public class JedisServerImpl implements JedisServer {
     public JedisServerImpl(String host, int port) {
         this.host = host;
         this.port = port;
-        this.leaderGroup = new NioEventLoopGroup(1);
+        this.bossGroup = new NioEventLoopGroup(1);
         this.workerGroup = new NioEventLoopGroup(4);
         this.jedisCore = new JedisCoreImpl(DEFAULT_DB_NUM);
     }
@@ -47,7 +47,7 @@ public class JedisServerImpl implements JedisServer {
     @Override
     public void start() {
         ServerBootstrap serverBootstrap = new ServerBootstrap();
-        serverBootstrap.group(leaderGroup, workerGroup)
+        serverBootstrap.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
@@ -77,8 +77,8 @@ public class JedisServerImpl implements JedisServer {
             if (this.workerGroup != null) {
                 this.workerGroup.shutdownGracefully().sync();
             }
-            if (this.leaderGroup != null) {
-                this.leaderGroup.shutdownGracefully().sync();
+            if (this.bossGroup != null) {
+                this.bossGroup.shutdownGracefully().sync();
             }
         } catch (InterruptedException e) {
             log.error("Jedis服务器关闭异常", e);
